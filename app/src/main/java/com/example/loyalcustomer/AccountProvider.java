@@ -15,7 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class AccountProvider extends ContentProvider {
-    private static final String AUTHORITY = "com.example.loyalcustomer.provider";
+    private static final String AUTHORITY = "com.example.loyalcustomer.provider.account";
     private static final String PATH_ACCOUNT_LIST = "accounts";
     private static final String PATH_ACCOUNT_BY_ID = "account";
     private static final String PATH_LOGIN = "login";
@@ -50,6 +50,7 @@ public class AccountProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         DBHelper dbHelper = new DBHelper(getContext());
+
         database = dbHelper.getWritableDatabase();
         return (database != null);
     }
@@ -62,15 +63,19 @@ public class AccountProvider extends ContentProvider {
 
         int uriType = sURIMatcher.match(uri);
 
+
         switch (uriType) {
             case LOGIN:
-                String username = uri.getQueryParameter("username");
-                String password = uri.getQueryParameter("password");
+                // Lấy username và password từ selectionArgs
+                if (selectionArgs != null && selectionArgs.length == 2) {
+                    String username = selectionArgs[0];
+                    String password = selectionArgs[1];
 
-                if (username != null && password != null) {
                     // Thêm điều kiện vào câu truy vấn
                     queryBuilder.appendWhere("username = ? AND password = ?");
                     selectionArgs = new String[]{username, password}; // Cập nhật selectionArgs
+                } else {
+                    throw new IllegalArgumentException("Thông tin đăng nhập không hợp lệ");
                 }
                 break;
             case CHANGE_PASSWORD:
@@ -81,7 +86,7 @@ public class AccountProvider extends ContentProvider {
                 queryBuilder.appendWhere(DBHelper.A_COLUMN_ID + "=" + uri.getLastPathSegment());
                 break;
             default:
-                throw new IllegalArgumentException("[ERR] Unknown URI: " + uri + " -- " + "uriType");
+                throw new IllegalArgumentException("Unknown URI: " + uri);
         }
 
         Cursor cursor = queryBuilder.query(database, projection, selection, selectionArgs, null, null, sortOrder);
@@ -135,6 +140,48 @@ public class AccountProvider extends ContentProvider {
         int rowsUpdated = 0;
         int uriType = sURIMatcher.match(uri);
         switch (uriType) {
+            case CHANGE_PASSWORD:
+                // Lấy thông tin từ ContentValues
+                String username = values.getAsString("username");
+                String oldPassword = values.getAsString("password");
+                String newPassword = values.getAsString("new_password");
+
+
+
+                // Kiểm tra xem mật khẩu cũ có đúng không
+                String selectionQuery = "username = ? AND password = ?";
+                String[] selectionArgsQuery = { username, oldPassword };
+
+
+                Cursor cursor = database.query(
+                        DBHelper.A_TABLE_NAME,
+                        null,
+                        selectionQuery,
+                        selectionArgsQuery,
+                        null,
+                        null,
+                        null
+                );
+
+                int rows = cursor.getCount();
+                cursor.close();
+
+                if (rows > 0) {
+                    // Nếu mật khẩu cũ đúng, cập nhật mật khẩu mới
+                    ContentValues newValues = new ContentValues();
+                    newValues.put("password", newPassword);
+
+                    // Cập nhật mật khẩu trong cơ sở dữ liệu
+                    rowsUpdated = database.update(
+                            DBHelper.A_TABLE_NAME,
+                            newValues,
+                            DBHelper.A_COLUMN_USERNAME + " = ?",
+                            new String[]{username}
+                    );
+
+                } else throw new IllegalArgumentException("Tài khoản hoặc mật khẩu không hợp lệ");
+                break;
+
             case ACCOUNTS:
                 rowsUpdated = database.update(DBHelper.A_TABLE_NAME, values, selection, selectionArgs);
                 break;
@@ -151,27 +198,7 @@ public class AccountProvider extends ContentProvider {
         return rowsUpdated;
     }
 
-    // Phương thức login
-    public boolean login(String username, String password) {
-        // Truy vấn để kiểm tra tài khoản có tồn tại với username và password hợp lệ
-        String selection = "username = ? AND password = ?";
-        String[] selectionArgs = { username, password };
 
-        Cursor cursor = database.query(
-                DBHelper.A_TABLE_NAME,
-                null,
-                selection,
-                selectionArgs,
-                null,
-                null,
-                null
-        );
-
-        // Kiểm tra nếu có kết quả, nghĩa là thông tin đăng nhập hợp lệ
-        boolean isValid = cursor.getCount() > 0;
-        cursor.close();
-        return isValid;
-    }
     // Phương thức đổi mật khẩu
     public boolean changePassword(String username, String oldPassword, String newPassword) {
         // Kiểm tra xem mật khẩu cũ có đúng không

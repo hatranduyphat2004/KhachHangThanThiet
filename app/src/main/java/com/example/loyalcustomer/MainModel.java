@@ -1,11 +1,13 @@
 package com.example.loyalcustomer;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class CustomerModel {
+public class MainModel {
     private String phone;
     private int point;
+    private int usedPoint;
+
+
     private String note;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -13,13 +15,22 @@ public class CustomerModel {
 
     // Constructors, getters, and setters
 
-    public CustomerModel(String phone, int point, String note, LocalDateTime createdAt, LocalDateTime updatedAt, String status) {
+    public MainModel(String phone, int point, int usedPoint, String note, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.phone = phone;
         this.point = point;
+        this.usedPoint = usedPoint;
         this.note = note;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.status = status;
+        this.status = "active";
+    }
+
+    public int getUsedPoint() {
+        return usedPoint;
+    }
+
+    public void setUsedPoint(int usedPoint) {
+        this.usedPoint = usedPoint;
     }
 
     public String getPhone() {

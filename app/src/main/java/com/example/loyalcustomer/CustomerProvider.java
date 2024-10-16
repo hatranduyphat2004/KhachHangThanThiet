@@ -14,7 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class CustomerProvider extends ContentProvider {
-    private static final String AUTHORITY = "com.example.loyalcustomer.provider";
+    private static final String AUTHORITY = "com.example.loyalcustomer.provider.customer";
     private static final String PATH_CUSTOMER_LIST = "customers";
     private static final String PATH_CUSTOMER_BY_ID = "customer";
     public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + PATH_CUSTOMER_LIST);

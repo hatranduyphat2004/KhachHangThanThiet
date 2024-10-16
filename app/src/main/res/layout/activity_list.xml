@@ -18,14 +18,28 @@
         android:textAlignment="center"
         android:textColor="#001758"
         android:textSize="24sp"
-        android:layout_marginBottom="40dp"
+        android:layout_marginBottom="10dp"
         android:textStyle="bold" />
 
+
+    <TextView
+        android:id="@+id/emptyList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="10dp"
+        android:text="EMPTY"
+        android:textAlignment="center"
+        android:textColor="#001758"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:visibility="invisible"
+        />
     <ListView
         android:id="@+id/lvCustomer"
         android:layout_weight="1"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
 
     <LinearLayout
         android:layout_width="match_parent"

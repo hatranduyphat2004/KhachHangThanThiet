@@ -3,6 +3,7 @@ package com.example.loyalcustomer;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 public class DBHelper extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "loyalcustomer.db";
@@ -82,6 +83,7 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(C_TABLE_CREATE);
         db.execSQL(P_TABLE_CREATE);
         db.execSQL(A_TABLE_CREATE);
+
     }
 
     @Override

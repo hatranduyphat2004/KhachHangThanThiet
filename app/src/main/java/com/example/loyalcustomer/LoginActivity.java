@@ -1,6 +1,7 @@
 package com.example.loyalcustomer;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -22,7 +23,7 @@ public class LoginActivity extends AppCompatActivity {
 
     EditText inpUsername, inpPassword;
 
-    Button btnLogin;
+    Button btnLogin, btnChangePassword;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,6 +37,7 @@ public class LoginActivity extends AppCompatActivity {
 
 
         btnLogin = findViewById(R.id.btnLogin);
+        btnChangePassword = findViewById(R.id.btnChangePassword);
         inpUsername = findViewById(R.id.inpUsername);
         inpPassword = findViewById(R.id.inpPassword);
 
@@ -44,16 +46,23 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(doLogin()) {
+                if (doLogin()) {
                     Toast.makeText(LoginActivity.this, "Login success", Toast.LENGTH_SHORT).show();
+                    Intent intentList = new Intent(LoginActivity.this, ListActivity.class);
+                    startActivity(intentList);
+                } else
+                    Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
 
-                } else Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
-//                Intent intentList = new Intent(LoginActivity.this, ListActivity.class);
-//                startActivity(intentList);
+            }
+        });
+
+        btnChangePassword.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(LoginActivity.this, ChangePasswordActivity.class));
             }
         });
     }
-
 
     private boolean doLogin() {
         try {
@@ -67,16 +76,13 @@ public class LoginActivity extends AppCompatActivity {
             //Dùng ContentResolver để thao tác với dữ liệu
             ContentResolver contentResolver = getContentResolver();
 
+
+
             // Tạo URI cho truy vấn đăng nhập
-            Uri loginUri = AccountProvider.LOGIN_URI.buildUpon()
-                    .appendQueryParameter("username", username)
-                    .appendQueryParameter("password", password)
-                    .build();
+            Uri loginUri = AccountProvider.LOGIN_URI;
 
-
-
-            // Thực hiện truy vấn
-            Cursor cursor = contentResolver.query(loginUri, null, null, null, null);
+            // Thực hiện truy vấn với ContentValues
+            Cursor cursor = contentResolver.query(loginUri, null, null, new String[]{username, password}, null);
 
 
 
@@ -87,7 +93,7 @@ public class LoginActivity extends AppCompatActivity {
             return isValid; // Trả về true nếu đăng nhập thành công
 
 
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             Log.d(TAG, "Lỗi khi login: " + e.toString());
         }
 

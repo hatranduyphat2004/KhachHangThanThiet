@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class Utils {
 //    public static String LocalDateToString(LocalDate l) {
@@ -26,14 +27,16 @@ public class Utils {
         return dt.format(format);
     }
 
-    public static LocalDateTime FormatDateSQL(String dt){
-
-        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        LocalDateTime localDate = LocalDateTime.parse(dt, inputFormatter);
-        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String outputDate = localDate.format(outputFormatter);
-        return LocalDateTime.parse(outputDate);
-
+    // Hàm chuyển đổi chuỗi thành LocalDateTime
+    public static LocalDateTime StringToLocalDate(String dateString) {
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        try {
+            return LocalDateTime.parse(dateString, format);
+        } catch (DateTimeParseException e) {
+            // Xử lý ngoại lệ nếu chuỗi không đúng định dạng
+            System.err.println("Invalid date format: " + e.getMessage());
+            return null; // Hoặc ném một ngoại lệ tùy thuộc vào cách bạn muốn xử lý
+        }
     }
 
     

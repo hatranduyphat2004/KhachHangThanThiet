@@ -14,15 +14,23 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class PointProvider extends ContentProvider {
-    private static final String AUTHORITY = "com.example.loyalcustomer.provider";
+    private static final String AUTHORITY = "com.example.loyalcustomer.provider.point";
     private static final String PATH_POINT_LIST = "points";
     private static final String PATH_POINT_BY_ID = "point";
+    private static final String PATH_POINTS_WITH_CUSTOMER = "point_customer";
+    private static final String PATH_POINT_BY_PHONE = "point_phone";
+
     public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/" + PATH_POINT_LIST);
     public static final Uri CONTENT_URI_BY_ID = Uri.parse("content://" + AUTHORITY + "/" + PATH_POINT_BY_ID);
+    public static final Uri POINTS_WITH_CUSTOMER_URI = Uri.parse("content://" + AUTHORITY + "/" + PATH_POINTS_WITH_CUSTOMER );
+    public static final Uri POINT_BY_PHONE_URI = Uri.parse("content://" + AUTHORITY + "/" + PATH_POINT_BY_PHONE);
 
     private SQLiteDatabase database;
     private static final int POINTS = 1;
     private static final int POINT = 2;
+    private static final int POINTS_WITH_CUSTOMER = 3;
+    private static final int POINT_BY_PHONE = 4;
+
 
     private static final UriMatcher sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
@@ -30,6 +38,9 @@ public class PointProvider extends ContentProvider {
     {
         sURIMatcher.addURI(AUTHORITY, PATH_POINT_LIST, POINTS);
         sURIMatcher.addURI(AUTHORITY, PATH_POINT_BY_ID, POINT);
+        sURIMatcher.addURI(AUTHORITY, PATH_POINTS_WITH_CUSTOMER, POINTS_WITH_CUSTOMER);
+        sURIMatcher.addURI(AUTHORITY, PATH_POINT_BY_PHONE, POINT_BY_PHONE);
+
     }
 
 
@@ -51,7 +62,22 @@ public class PointProvider extends ContentProvider {
 
         int uriType = sURIMatcher.match(uri);
         switch (uriType) {
+            case POINTS_WITH_CUSTOMER:
+                queryBuilder.setTables(DBHelper.P_TABLE_NAME + " p JOIN " + DBHelper.C_TABLE_NAME + " c ON p.customer_id = c.id");
+                // Nếu bạn cần chọn cột cụ thể, hãy sử dụng 'projection'
+                if (projection == null) {
+                    // Nếu không có projection, lấy tất cả cột của bảng điểm và số điện thoại từ bảng khách hàng
+                    projection = new String[]{"p.*", "c.phone"};
+                }
+                break;
             case POINTS:
+                break;
+
+            case POINT_BY_PHONE:
+                // Thiết lập bảng cho trường hợp này
+                queryBuilder.setTables(DBHelper.P_TABLE_NAME + " p JOIN " + DBHelper.C_TABLE_NAME + " c ON p.customer_id = c.id");
+                // Chọn cột cụ thể
+                projection = new String[]{"p.current_point","p.id","p.note", "c.phone"};
                 break;
             case POINT:
                 queryBuilder.appendWhere(DBHelper.P_COLUMN_ID + "=" + uri.getLastPathSegment());
@@ -115,9 +141,8 @@ public class PointProvider extends ContentProvider {
                 rowsUpdated = database.update(DBHelper.P_TABLE_NAME, values, selection, selectionArgs);
                 break;
             case POINT:
-                String id = uri.getLastPathSegment();
-                if (id != null) {
-                    rowsUpdated = database.update(DBHelper.P_TABLE_NAME, values, DBHelper.P_COLUMN_ID + " = ?", new String[]{id});
+                if (values.get("id") != null) {
+                    rowsUpdated = database.update(DBHelper.P_TABLE_NAME, values, selection, selectionArgs);
                 }
                 break;
             default:
