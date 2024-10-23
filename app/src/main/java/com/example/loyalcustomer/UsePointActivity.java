@@ -11,6 +11,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -22,11 +25,17 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 
 public class UsePointActivity extends AppCompatActivity {
     Button u_btnSave, u_btnSaveNext, u_btnInputPoint, u_btnList;
-    EditText u_inpPhone, u_inpCurrentPoint, u_inpUsePoint, u_inpNote;
+    EditText  u_inpCurrentPoint, u_inpUsePoint, u_inpNote;
     private int u_idPoint;
+
+    private AutoCompleteTextView phoneAutoComplete;
+    private ArrayList<String> phoneNumbers = new ArrayList<String>();  // Danh sách số điện thoại từ DB
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,24 +52,66 @@ public class UsePointActivity extends AppCompatActivity {
         u_btnInputPoint = findViewById(R.id.u_btnInputPoint);
         u_btnList = findViewById(R.id.u_btnList);
 
-        u_inpPhone = findViewById(R.id.u_inpPhone);
         u_inpCurrentPoint = findViewById(R.id.u_inpCurrentPoint);
         u_inpUsePoint = findViewById(R.id.u_inpUsePoint);
         u_inpNote = findViewById(R.id.u_inpNote);
 
+        // Lấy AutoCompleteTextView từ layout
+        phoneAutoComplete = findViewById(R.id.phone_auto_complete);
 
-        // Thiết lập OnFocusChangeListener
-        u_inpPhone.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        // Giả lập lấy dữ liệu số điện thoại từ DB
+        phoneNumbers.add("0799664334");phoneNumbers.add("0939790420");phoneNumbers.add("0665534523");
+        phoneNumbers.add("0776805115");
+
+        // Tạo ArrayAdapter để đưa dữ liệu vào AutoCompleteTextView
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, phoneNumbers);
+
+        // Gắn adapter vào AutoCompleteTextView
+        phoneAutoComplete.setAdapter(adapter);
+
+        // Đặt số lượng ký tự tối thiểu trước khi bắt đầu gợi ý (có thể điều chỉnh nếu muốn)
+        phoneAutoComplete.setThreshold(1);
+
+        // Lắng nghe sự kiện khi chọn một số điện thoại từ danh sách gợi ý
+        phoneAutoComplete.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String selectedPhone = (String) parent.getItemAtPosition(position);
+                // Thực hiện hành động khi chọn số điện thoại (ví dụ thêm điểm mới)
+                handleGetPointByPhone(selectedPhone);
+            }
+        });
+        // Lắng nghe sự kiện khi người dùng rời khỏi AutoCompleteTextView
+        phoneAutoComplete.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 if (!hasFocus) {
-                    // Khi EditText mất focus
-                    String text = u_inpPhone.getText().toString();
-                    // Thực hiện hành động cần thiết
-                    handleFocusLost(text);
+                    String enteredPhone = phoneAutoComplete.getText().toString();
+                    boolean isHas = false;
+                    for (String n: phoneNumbers) {
+                        if (n.equals(enteredPhone)) {
+                            isHas = true;
+                        }
+                    }
+                    if (!isHas) {
+                        u_inpCurrentPoint.setText("Phone doesn't exist");
+                        u_inpCurrentPoint.setTextColor(Color.RED);
+                        u_inpNote.setText("");
+                    }
+
                 }
             }
         });
+
+
+
+
+
+
+
+
+
+
         u_btnSave.setOnClickListener(v-> {
             if (handleSave())
                 finish();
@@ -73,7 +124,7 @@ public class UsePointActivity extends AppCompatActivity {
 
 
         u_btnList.setOnClickListener(v -> {
-            if (!u_inpPhone.getText().toString().isEmpty()) {
+            if (!phoneAutoComplete.getText().toString().isEmpty()) {
                 goActivity(ListActivity.class);
                 return;
             }
@@ -81,7 +132,7 @@ public class UsePointActivity extends AppCompatActivity {
 
         });
         u_btnInputPoint.setOnClickListener(v -> {
-            if (!u_inpPhone.getText().toString().isEmpty()) {
+            if (!phoneAutoComplete.getText().toString().isEmpty()) {
                 goActivity(UsePointActivity.class);
                 return;
             }
@@ -114,7 +165,7 @@ public class UsePointActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
     }
-    private void handleFocusLost(String text) {
+    private void handleGetPointByPhone(String text) {
         // Xử lý sự kiện khi EditText mất focus
         try {
             //Dùng ContentResolver để thao tác với dữ liệu
@@ -192,12 +243,12 @@ public class UsePointActivity extends AppCompatActivity {
 
     private void reset() {
 
-        u_inpPhone.setText("");
+        phoneAutoComplete.setText("");
         u_inpNote.setText("");
         u_inpCurrentPoint.setText("");
         u_inpUsePoint.setText("");
         u_idPoint = -1;
-        u_inpPhone.requestFocus();
+
     }
 
 }

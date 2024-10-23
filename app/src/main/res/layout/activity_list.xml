@@ -34,14 +34,15 @@
         android:textStyle="bold"
         android:visibility="invisible"
         />
+
     <ListView
         android:id="@+id/lvCustomer"
-        android:layout_weight="1"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="380dp" />
 
 
     <LinearLayout
+        android:layout_marginTop="12dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 
@@ -82,5 +83,47 @@
             app:cornerRadius="4dp" />
 
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="20dp"
+            android:layout_weight="1"
+            android:backgroundTint="#B21C1C"
+            android:text="LOGOUT"
+            android:textSize="13sp"
+            app:cornerRadius="4dp" />
+
+        <Button
+            android:id="@+id/btnExport"
+            android:layout_width="match_parent"
+
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_weight="1"
+            android:backgroundTint="#06A209"
+            android:text="EXPORT"
+            android:textSize="14sp"
+            app:cornerRadius="4dp" />
+
+        <Button
+            android:id="@+id/btnImport"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:layout_weight="1"
+            android:backgroundTint="#111891"
+            android:text="IMPORT"
+            android:textSize="14sp"
+            app:cornerRadius="4dp" />
+
+    </LinearLayout>
+
 
 </LinearLayout>

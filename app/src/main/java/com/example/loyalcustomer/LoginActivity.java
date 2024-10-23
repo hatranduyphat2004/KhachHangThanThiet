@@ -50,6 +50,7 @@ public class LoginActivity extends AppCompatActivity {
                     Toast.makeText(LoginActivity.this, "Login success", Toast.LENGTH_SHORT).show();
                     Intent intentList = new Intent(LoginActivity.this, ListActivity.class);
                     startActivity(intentList);
+                    finish();
                 } else
                     Toast.makeText(LoginActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
 
@@ -99,6 +100,9 @@ public class LoginActivity extends AppCompatActivity {
 
         return false;
     }
-
+    private void reset() {
+        inpUsername.setText("");
+        inpPassword.setText("");
+    }
 
 }
