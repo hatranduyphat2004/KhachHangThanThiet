@@ -6,7 +6,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,11 +20,11 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.FragmentManager;
 
 import org.xmlpull.v1.XmlSerializer;
 
@@ -36,9 +35,8 @@ import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.List;
 
-public class ListActivity extends AppCompatActivity {
+public class ListActivity extends AppCompatActivity implements SendMailDialog.EmailDialogListener {
 
     private static final int REQUEST_CODE_STORAGE_PERMISSION = 100;
     private ListView lvCustomer;
@@ -154,7 +152,8 @@ public class ListActivity extends AppCompatActivity {
         btnExport.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                exportToXML(customers);
+
+                showEmailDialog();
 
                 saveXmlToExternalStorage(ListActivity.this);
             }
@@ -168,6 +167,7 @@ public class ListActivity extends AppCompatActivity {
                     startActivityForResult(Intent.createChooser(intent, "Chọn file"), 1);
             }
         });
+
     }
 
     @Override
@@ -189,8 +189,39 @@ public class ListActivity extends AppCompatActivity {
         }
     }
 
+    // Hiển thị EmailDialogFragment
+    private void showEmailDialog() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        SendMailDialog emailDialog = new SendMailDialog();
+        emailDialog.show(fragmentManager, "email_dialog");
+    }
 
+    // Nhận email từ dialog và xử lý logic gửi email
+    @Override
+    public void onSendEmail(String email) {
+        // Gọi hàm để gửi email với file đính kèm
+        sendEmailWithAttachment(email);
+    }
+    // Hàm gửi email với file đính kèm
+    private void sendEmailWithAttachment(String email) {
+        // Đường dẫn tới file .xml có sẵn
+        File file = new File(getExternalFilesDir(null), "yourfile.xml");
 
+        // Tạo intent gửi email
+        Intent emailIntent = new Intent(Intent.ACTION_SEND);
+        emailIntent.setType("vnd.android.cursor.dir/email");
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{email});
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Your XML File");
+        emailIntent.putExtra(Intent.EXTRA_TEXT, "Please find the attached file.");
+
+        // Gắn file đính kèm vào email
+        Uri uri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", file);
+        emailIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        // Khởi chạy ứng dụng email
+        startActivity(Intent.createChooser(emailIntent, "Send email..."));
+    }
     private void logout() {
         AlertDialog.Builder builder = new AlertDialog.Builder(ListActivity.this);
         builder.setMessage("Are you sure ?");
@@ -404,4 +435,6 @@ public class ListActivity extends AppCompatActivity {
             Toast.makeText(context, "External storage is not mounted", Toast.LENGTH_SHORT).show();
         }
     }
+
+
 }
