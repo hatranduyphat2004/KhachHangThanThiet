@@ -59,9 +59,9 @@ public class UsePointActivity extends AppCompatActivity {
         // Lấy AutoCompleteTextView từ layout
         phoneAutoComplete = findViewById(R.id.phone_auto_complete);
 
-        // Giả lập lấy dữ liệu số điện thoại từ DB
-        phoneNumbers.add("0799664334");phoneNumbers.add("0939790420");phoneNumbers.add("0665534523");
-        phoneNumbers.add("0776805115");
+        // Lấy dữ liệu số điện thoại từ DB
+
+        phoneNumbers = getPhones();
 
         // Tạo ArrayAdapter để đưa dữ liệu vào AutoCompleteTextView
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, phoneNumbers);
@@ -141,6 +141,36 @@ public class UsePointActivity extends AppCompatActivity {
         });
 
     }
+
+    private ArrayList<String> getPhones() {
+        ArrayList<String> rs = new ArrayList<>();
+        try {
+            //Dùng ContentResolver để thao tác với dữ liệu
+            ContentResolver contentResolver = getContentResolver();
+
+            Uri uri = PointProvider.POINTS_WITH_CUSTOMER_URI;
+
+            //Kiểu sắp xếp (nên để theo thời gian giảm dần)
+            String sortOrder = DBHelper.P_COLUMN_CREATED_AT + " DESC";
+
+            //Cho cursor chạy để tìm hàng dữ liệu thỏa với điều kiện trong database
+            Cursor cursor = contentResolver.query(uri, null, null, null, sortOrder);
+
+
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+
+                    String phone = cursor.getString(cursor.getColumnIndexOrThrow(DBHelper.C_COLUMN_PHONE));
+                    rs.add(phone);
+                } while (cursor.moveToNext());
+                cursor.close();
+            }
+        } catch(Exception e) {
+            Log.d(">>> ListActivity <<<", "Lỗi khi lấy danh sách point: " + e.toString());
+        }
+         return rs;
+    }
+
     private void goActivity(Class c) {
         AlertDialog.Builder builder = new AlertDialog.Builder(UsePointActivity.this);
         builder.setMessage("Are you sure ?");

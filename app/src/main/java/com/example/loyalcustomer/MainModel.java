@@ -15,6 +15,9 @@ public class MainModel {
 
     // Constructors, getters, and setters
 
+    public MainModel() {
+
+    }
     public MainModel(String phone, int point, int usedPoint, String note, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.phone = phone;
         this.point = point;

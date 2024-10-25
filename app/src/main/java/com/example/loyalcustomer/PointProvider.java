@@ -9,6 +9,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -101,6 +102,7 @@ public class PointProvider extends ContentProvider {
     @Nullable
     @Override
     public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+        Log.d(">>>CHECK INSERT POINT<<<", values.toString());
         long id = database.insert(DBHelper.P_TABLE_NAME, null, values);
         if (id > 0) {
             Uri pointUri = ContentUris.withAppendedId(CONTENT_URI, id);

@@ -70,6 +70,10 @@ public class DBHelper extends SQLiteOpenHelper {
             A_COLUMN_PASSWORD + " TEXT NOT NULL, " +
             A_COLUMN_STATUS + " INTEGER DEFAULT 1);";
 
+    private static final String A_INIT_DATA = "INSERT INTO " + A_TABLE_NAME + " ("
+            + A_COLUMN_USERNAME + ", " + A_COLUMN_PASSWORD + ", " + A_COLUMN_STATUS +
+            ") VALUES ('admin', 'admin', 1);";
+
 
 
 
@@ -83,6 +87,7 @@ public class DBHelper extends SQLiteOpenHelper {
         db.execSQL(C_TABLE_CREATE);
         db.execSQL(P_TABLE_CREATE);
         db.execSQL(A_TABLE_CREATE);
+        db.execSQL(A_INIT_DATA);
 
     }
 

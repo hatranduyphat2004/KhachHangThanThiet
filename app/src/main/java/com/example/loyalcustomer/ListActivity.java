@@ -3,6 +3,7 @@ package com.example.loyalcustomer;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.util.Log;
 import android.util.Xml;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,9 +28,12 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.FragmentManager;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -36,7 +41,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 
-public class ListActivity extends AppCompatActivity implements SendMailDialog.EmailDialogListener {
+public class ListActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_STORAGE_PERMISSION = 100;
     private ListView lvCustomer;
@@ -152,9 +157,6 @@ public class ListActivity extends AppCompatActivity implements SendMailDialog.Em
         btnExport.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                showEmailDialog();
-
                 saveXmlToExternalStorage(ListActivity.this);
             }
         });
@@ -184,44 +186,124 @@ public class ListActivity extends AppCompatActivity implements SendMailDialog.Em
                 Toast.makeText(this, "File đã chọn: " + filePath, Toast.LENGTH_SHORT).show();
 
                 // Nếu bạn muốn import file .xml, gọi hàm xử lý tại đây
-                // importXmlFromUri(uri);
+                if(importXmlFromUri(ListActivity.this,filePath))
+                    Toast.makeText(this, "Imported successfully", Toast.LENGTH_SHORT).show();
+                else
+                    Toast.makeText(this, "Import failed", Toast.LENGTH_SHORT).show();
+
             }
         }
     }
 
-    // Hiển thị EmailDialogFragment
-    private void showEmailDialog() {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        SendMailDialog emailDialog = new SendMailDialog();
-        emailDialog.show(fragmentManager, "email_dialog");
+    private ArrayList<MainModel> readFileXML(Context context, String inpFilePath) {
+        ArrayList<MainModel> rs = new ArrayList<>();
+        String filePath = inpFilePath.replace("/document/raw:", "");
+        File file = new File(filePath);
+
+
+        if (!file.exists()) {
+            Log.d(">>>> Check read file <<<<<", "File not found: " + filePath);
+            return rs;
+        }
+
+        try (FileInputStream fis = new FileInputStream(file)) {
+            XmlPullParser parser = Xml.newPullParser();
+            parser.setInput(fis, null);
+            int eventType = parser.getEventType();
+            MainModel data = null;
+
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                String tagName = parser.getName();
+                switch (eventType) {
+                    case XmlPullParser.START_TAG:
+                        if (tagName.equals("customer")) {
+                            data = new MainModel();
+                        } else if (data != null) {
+                            switch (tagName) {
+                                case "phone":
+                                    data.setPhone(parser.nextText());
+                                    break;
+                                case "points":
+                                    data.setPoint(Integer.parseInt(parser.nextText()));
+                                    break;
+                                case "usedPoint":
+                                    data.setUsedPoint(Integer.parseInt(parser.nextText()));
+                                    break;
+                                case "note":
+                                    data.setNote(parser.nextText());
+                                    break;
+                                case "createdAt":
+                                    data.setCreatedAt(Utils.StringToLocalDate(parser.nextText()));
+                                    break;
+                                case "updatedAt":
+                                    data.setUpdatedAt(Utils.StringToLocalDate(parser.nextText()));
+                                    break;
+                            }
+                        }
+                        break;
+
+                    case XmlPullParser.END_TAG:
+                        if (tagName.equals("customer") && data != null) {
+                            rs.add(data);
+                        }
+                        break;
+                }
+                eventType = parser.next();
+            }
+        } catch (XmlPullParserException | IOException e) {
+            Log.d(">>>>>Check read file xml<<<", e.toString());
+            e.printStackTrace();
+        }
+
+        return rs;
     }
 
-    // Nhận email từ dialog và xử lý logic gửi email
-    @Override
-    public void onSendEmail(String email) {
-        // Gọi hàm để gửi email với file đính kèm
-        sendEmailWithAttachment(email);
+    public boolean importXmlFromUri(Context context, String filePath) {
+        boolean rs = true;
+        ArrayList<MainModel> ls = readFileXML(context, filePath);
+
+
+        for (MainModel m : ls) {
+            try {
+                Uri uri = CustomerProvider.CONTENT_URI;
+                Uri uri2 = PointProvider.CONTENT_URI;
+
+                //Thêm các giá trị cần lưu vào ContentValues
+                ContentValues values = new ContentValues();
+                values.put("phone", m.getPhone());
+
+                //Dùng ContentResolver gọi hàm insert để thêm Customer
+                Uri rsUri = getContentResolver().insert(uri, values);
+
+                ContentValues values2 = new ContentValues();
+                // asy id Customer vừa thêm
+                int cId = Integer.parseInt(rsUri.toString().replace("content://com.example.loyalcustomer.provider.customer/customers/", ""));
+
+
+                values2.put("customer_id", cId);
+                values2.put("current_point", m.getPoint());
+                values2.put("used_point", m.getUsedPoint());
+                values2.put("note", m.getNote());
+                values2.put("createdAt", Utils.LocalDateToString(m.getCreatedAt()));
+                values2.put("updatedAt", Utils.LocalDateToString(m.getUpdatedAt()));
+
+
+                getContentResolver().insert(uri2, values2);
+
+            }
+
+            catch(Exception e) {
+                Log.d(">>>>Check insert<<<", e.toString());
+
+                rs = false;
+            }
+
+        }
+
+
+        return rs;
     }
-    // Hàm gửi email với file đính kèm
-    private void sendEmailWithAttachment(String email) {
-        // Đường dẫn tới file .xml có sẵn
-        File file = new File(getExternalFilesDir(null), "yourfile.xml");
 
-        // Tạo intent gửi email
-        Intent emailIntent = new Intent(Intent.ACTION_SEND);
-        emailIntent.setType("vnd.android.cursor.dir/email");
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{email});
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Your XML File");
-        emailIntent.putExtra(Intent.EXTRA_TEXT, "Please find the attached file.");
-
-        // Gắn file đính kèm vào email
-        Uri uri = FileProvider.getUriForFile(this, getApplicationContext().getPackageName() + ".provider", file);
-        emailIntent.putExtra(Intent.EXTRA_STREAM, uri);
-        emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        // Khởi chạy ứng dụng email
-        startActivity(Intent.createChooser(emailIntent, "Send email..."));
-    }
     private void logout() {
         AlertDialog.Builder builder = new AlertDialog.Builder(ListActivity.this);
         builder.setMessage("Are you sure ?");
@@ -419,6 +501,11 @@ public class ListActivity extends AppCompatActivity implements SendMailDialog.Em
 
                     // Ghi nội dung vào file
                     fos.write(writer.toString().getBytes());
+
+
+                    // Sau khi ghi xong nội dung vào file, hiện dialog nhập email
+                    showEmailDialog(context, file);
+
                     fos.close();
 
                     // Thông báo thành công
@@ -435,6 +522,54 @@ public class ListActivity extends AppCompatActivity implements SendMailDialog.Em
             Toast.makeText(context, "External storage is not mounted", Toast.LENGTH_SHORT).show();
         }
     }
+
+    private void showEmailDialog(Context context, File file) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Send Email");
+
+        // Thiết lập layout cho dialog
+        final EditText emailInput = new EditText(context);
+        emailInput.setHint("Enter email address");
+        builder.setView(emailInput);
+
+        // Thiết lập nút Gửi
+        builder.setPositiveButton("Send", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String email = emailInput.getText().toString();
+                sendEmail(context, email, file);
+            }
+        });
+
+        // Thiết lập nút Hủy
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+    }
+    private void sendEmail(Context context, String email, File file) {
+        Uri uri = FileProvider.getUriForFile(context, context.getPackageName() + ".fileprovider", file);
+        Intent emailIntent = new Intent(Intent.ACTION_SEND);
+        emailIntent.setType("application/xml");
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{email});
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, "LOYAL CUSTOMER");
+        emailIntent.putExtra(Intent.EXTRA_TEXT, "File loyal customers");
+        emailIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        try {
+            context.startActivity(Intent.createChooser(emailIntent, "Send email..."));
+            Toast.makeText(context, "Email sent successfully", Toast.LENGTH_SHORT).show();
+        } catch (android.content.ActivityNotFoundException ex) {
+            Toast.makeText(context, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+        }
+
+    }
+
 
 
 }
